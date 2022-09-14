@@ -8,12 +8,12 @@ Try Live Demo: https://arby.surge.sh/
 
 ![arby](https://user-images.githubusercontent.com/75052782/190064747-295122f6-a20b-49df-a679-d4484e235a5b.jpg)
 
-Connect with Goerli. Press Execute Arbitrage. The profit will arrive in your wallet.
+🧪 Connect with Goerli. Press Execute Arbitrage. The profit will arrive in your wallet.
 
-View all the transactions on etherscan:
+🧪 View all the transactions on etherscan:
 ![arby2](https://user-images.githubusercontent.com/75052782/190064772-5a2a460f-ba6b-491c-9878-b9f7a8a273d0.jpg)
 
-Visual representation of the process:
+🧪 Visual representation of the process:
 ![arb_excal](https://user-images.githubusercontent.com/75052782/190064791-82fe4890-05d0-4ab9-a8dc-06e062adce8f.png)
 
 # 🏄‍♂️ Quick Start
@@ -49,54 +49,7 @@ yarn deploy
 
 📱 Open http://localhost:3000 to see the app.
 
-```bash
-To test the database we will write a message on the blockchain. Type message then click Send Message:
-```
-
-> code: await database.put({sender: update.from, message: newPurpose});
-
-![write_msg_here](https://user-images.githubusercontent.com/75052782/183679702-38431c6b-78a9-421a-9f6f-3c7997bf76b9.png)
-
-```bash
-Verify the data was written to your Deta database:
-```
-
-![deta_first_entries](https://user-images.githubusercontent.com/75052782/183680362-ca9d5da4-7b98-4975-aa55-81bd1700c003.png)
-
-```bash
-Fetch Data pulls all data from the database:
-```
-> code: await database.fetch();
-
-![fetch_all_data](https://user-images.githubusercontent.com/75052782/183679807-ecbe3777-d6ba-47f6-8824-72e3ee574201.png)
-
-```bash
-Next enter a message to pull it's details stored in the database.
-```
-
-![single_msg_details](https://user-images.githubusercontent.com/75052782/183679948-97d431dd-7196-4388-bee3-1f13a7cfc725.png)
-
-```bash
-To create a new database enter a name and click Create.
-```
-
-![second_db](https://user-images.githubusercontent.com/75052782/183693554-130b6e78-2e0f-4499-b1a6-1b609b31c590.png)
-
-```bash
-10 seconds later it will appear in the dropdown menu.
-```
-
-![second_db_dropdown](https://user-images.githubusercontent.com/75052782/183680186-809f0ea8-05de-4559-b0be-7be03fa879e8.png)
-
-```bash
-Select the new database and send a new message. Check Deta to verify the new database was created.
-```
-
-![second_db_deta](https://user-images.githubusercontent.com/75052782/183680464-f0db5e1c-4c3e-45c8-ae39-afa9e42c233b.png)
-
-
-
-# In v2 we will deploy an Express.js API running on our free Deta virtual machine.
+# In part 2 we will deploy live on Polygon
 
 
 # 📚 Additional 
