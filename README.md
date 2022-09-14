@@ -1,10 +1,20 @@
 # 🏗 Scaffold-ETH-Arbitrage-Learning
 
-# Learn how to Use Flash Loans to Profit from Arbitrage Opportunities Uniswap V2 to V3! 🚀
+# Learn how to Use Flash Loans to Profit from Arbitrage Opportunities Uniswap V2 to V3 Goerli Testnet! 🚀
 
 🧪 Quickly deploy and experiment with Solidity using a frontend that adapts to your smart contract
 
+Try Live Demo: https://arby.surge.sh/
 
+![arby](https://user-images.githubusercontent.com/75052782/190064747-295122f6-a20b-49df-a679-d4484e235a5b.jpg)
+
+Connect with Goerli. Press Execute Arbitrage. The profit will arrive in your wallet.
+
+View all the transactions on etherscan:
+![arby2](https://user-images.githubusercontent.com/75052782/190064772-5a2a460f-ba6b-491c-9878-b9f7a8a273d0.jpg)
+
+Visual representation of the process:
+![arb_excal](https://user-images.githubusercontent.com/75052782/190064791-82fe4890-05d0-4ab9-a8dc-06e062adce8f.png)
 
 # 🏄‍♂️ Quick Start
 
@@ -17,21 +27,20 @@ Code Prerequisites: [Node (v16 LTS)](https://nodejs.org/en/download/) plus [Yarn
 git clone https://github.com/2187Nick/scaffold-eth-arbitrage-learning.git
 ```
 
-> install and start 👷‍:
+> install 👷‍:
 
 ```bash
 cd scaffold-eth-arbitrage-learning
 yarn install
 ```
 
-> in a second terminal window, start your 📱 frontend:
+> start your 📱 frontend:
 
 ```bash
-cd scaffold-eth-arbitrage-learning
 yarn start
 ```
 
-> in a third terminal window, 🛰 deploy your contract:
+> in a second terminal window, 🛰 deploy your contract to Goerli:
 
 ```bash
 cd scaffold-eth-arbitrage-learning
