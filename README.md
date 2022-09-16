@@ -4,7 +4,7 @@
 
 🧪 Quickly deploy and experiment with Solidity using a frontend that adapts to your smart contract
 
-Try Live Demo: https://arby.surge.sh/
+Try Live Demo: https://arbv2.surge.sh/
 
 ![arby](https://user-images.githubusercontent.com/75052782/190064747-295122f6-a20b-49df-a679-d4484e235a5b.jpg)
 
