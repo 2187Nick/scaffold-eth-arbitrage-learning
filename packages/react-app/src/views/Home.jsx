@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState} from "react";
 import { Excal } from "../components";
-import { Button, Card, DatePicker, Divider, Input, Progress, Slider, Spin, Switch, Select, Table } from "antd";
+import { Button, Divider,  Select, Table } from "antd";
 import { BigNumber,Contract,Wallet,providers,  utils, ethers } from "ethers";
 import { abi as IUniswapV3PoolABI } from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json'
 import { abi as QuoterABI } from '@uniswap/v3-periphery/artifacts/contracts/lens/Quoter.sol/Quoter.json'
@@ -79,25 +79,33 @@ export default function Home({userSigner, address, localProvider, writeContracts
     const [spacing, setSpacing] = useState(1);
     const [amountToBuy, setAmountToBuy] = useState(0);
     const [eth_v3ArrayQuote, setEth_v3ArrayQuote] = useState([]);
+    const [eth_v2ArrayQuote, setEth_v2ArrayQuote] = useState([]);
+    //const [profit, setProfit] = useState([]);
     const [realizedProfit, setRealizedProfit] = useState(0);
 
     async function flash3() {
     
-      // Initiate the Arbitrage
-      const tx1 = await tx(writeContracts.UniswapV2toV3Arbitrage.flashSwapArb(amountToBuy));
-      console.log("tx: ", tx1)
-    
-      const swapTxhash = await tx1.hash;
-      console.log(swapTxhash);
+      if (amountToBuy>0) {
 
-      const receipt = await tx1.wait()
-      console.log("receipt: ", receipt.logs)
+        const amount = (amountToBuy*ETHER).toString()
+        console.log("amount: ", amount)
 
-      const event = receipt.events.find(x => x.event === "SentProfit");
+        // Initiate the Arbitrage)
+        const tx1 = await tx(writeContracts.UniswapV2toV3Arbitrage.flashSwapArb(amount));
+        console.log("tx: ", tx1)
+      
+        const swapTxhash = await tx1.hash;
+        console.log(swapTxhash);
 
-      console.log("profit: ", utils.formatEther(event.args.profit)); 
-      setRealizedProfit(parseFloat(utils.formatEther(event.args.profit)).toFixed(2))
-    
+        const receipt = await tx1.wait()
+        console.log("receipt: ", receipt.logs)
+
+        const event = receipt.events.find(x => x.event === "SentProfit");
+
+        console.log("profit: ", utils.formatEther(event.args.profit)); 
+        setRealizedProfit(parseFloat(utils.formatEther(event.args.profit)).toFixed(2))
+
+      } 
     }
     
     async function main() {
@@ -106,32 +114,44 @@ export default function Home({userSigner, address, localProvider, writeContracts
     const pair_reserves = await uni_feth_fdai_contract.functions.getReserves();
     const feth_reserves = pair_reserves[1];
     const fdai_reserves = pair_reserves[0];
-    //console.log(`feth_reserves_v2: ${utils.formatEther(feth_reserves.toString())} FETH`)
-    //console.log(`fdai_reserves_v2: ${utils.formatEther(fdai_reserves.toString())} FDAI`)
-
-    const amount_in1 = ETHER.mul(spacing);
-    const amount_in2 = ETHER.mul(spacing*2);
-    const amount_in3 = ETHER.mul(spacing*3);
-    const amount_in4 = ETHER.mul(spacing*4);
-    const amount_in5 = ETHER.mul(spacing*5);
-    const amount_in6 = ETHER.mul(spacing*6);
-    const amount_in7 = ETHER.mul(spacing*7);
-    const amount_in8 = ETHER.mul(spacing*8);
-    const amount_in9 = ETHER.mul(spacing*9);
-
-    const amount_ethV2 = [amount_in1, amount_in2,amount_in3,amount_in4,amount_in5,amount_in6,amount_in7,amount_in8,amount_in9]
-    const uni_reserve_in = feth_reserves;
-    const uni_reserve_out = fdai_reserves;
+    console.log(`feth_reserves_v2: ${utils.formatEther(feth_reserves.toString())} FETH`)
+    console.log(`fdai_reserves_v2: ${utils.formatEther(fdai_reserves.toString())} FDAI`)
 
     const ethArray1 = []
     const ethArray1_formatted = []
 
-    // Fake Eth in gives us how much FDAI we will get in exchange on V2
+    const [immutables, state] = await Promise.all([getPoolImmutables(), getPoolState()])
+
+    //const ethArray2 = []
+    const ethArray3 = []
+    const ethArray3_formatted = []
+    const ethArray_price = []
+
+    // Fake DAI in gives us how much FETH we will get in exchange on V3
+     for (let q=1; q<10; q++){
+      const quotedAmountOutFETH = await quoterContract.callStatic.quoteExactInputSingle(
+        immutables.token0,  // FDAI
+        immutables.token1,  // FETH
+        immutables.fee,
+        ETHER.mul(q*spacing),  // Amount In
+        0
+      )
+  
+      const out1 = await quotedAmountOutFETH; //.toNumber();
+      ethArray3.push(out1)
+      ethArray3_formatted.push(utils.formatEther(out1))
+      //console.log("FDAI IN equals FETH OUT on V3: ", utils.formatEther(out1))
+
+    }
+    setEth_v3ArrayQuote(ethArray3_formatted)
+
+    // Fake F-ETH in gives us how much F-DAI we will get in exchange on V2
     for(let z=0; z<9; z++) {
       const amount_out = await uni_router_contract.functions.getAmountOut(
-        amount_ethV2[z],
-        uni_reserve_in,
-        uni_reserve_out);
+        ethArray3[z],
+        feth_reserves,
+        fdai_reserves
+        );
       const amount = await amount_out.toString();
       //console.log("amountxxxETH: ", utils.formatEther(amount))
       ethArray1.push(amount_out)
@@ -141,36 +161,29 @@ export default function Home({userSigner, address, localProvider, writeContracts
 
     setEth_v2ArrayX(ethArray1_formatted)
 
-    const [immutables, state] = await Promise.all([getPoolImmutables(), getPoolState()])
-
-    const ethArray2 = []
-    const ethArray3 = []
-
-     // Fake Eth in gives us how much FDAI we will get in exchange on V3
-    for (let q=1; q<10; q++){
-      const quotedAmountOutFDAI = await quoterContract.callStatic.quoteExactInputSingle(
-        immutables.token0,  // FDAI
-        immutables.token1,  // FETH
-        immutables.fee,
-        ETHER.mul(q*spacing),  // Amount In
-        0
-      )
-  
-      const out1 = await quotedAmountOutFDAI; //.toNumber();
-      ethArray3.push(utils.formatEther(out1))
-
+    // F-DAI in gives us how much F-ETH we will get in exchange on V2.  (This is just to calc exchange rate. To display)
+    for(let z=0; z<9; z++) {
+      const amount_out = await uni_router_contract.functions.getAmountOut(
+        ETHER.mul((z+1)*spacing), // amount in
+        fdai_reserves,
+        feth_reserves
+        );
+      const amount = await amount_out.toString();
+      //console.log("amountxxxETH: ", utils.formatEther(amount))
+      //ethArray1.push(amount_out)
+      //console.log("ethArray1: ", ethArray1)
+      ethArray_price.push(utils.formatEther(amount))
     }
-    setEth_v3ArrayQuote(ethArray3)
 
-    //const arr1 = [Number(parseFloat(eth_v3ArrayQuote[0] - 1*spacing).toFixed(5)),Number(parseFloat(eth_v3ArrayQuote[1] - 2*spacing).toFixed(5)),Number(parseFloat(eth_v3ArrayQuote[2] - 3*spacing).toFixed(5)),Number(parseFloat(eth_v3ArrayQuote[3] - 4*spacing).toFixed(5)),Number(parseFloat(eth_v3ArrayQuote[4] - 5*spacing).toFixed(5)),Number(parseFloat(eth_v3ArrayQuote[5] - 6*spacing).toFixed(5)),Number(parseFloat(eth_v3ArrayQuote[6] - 7*spacing).toFixed(5)),Number(parseFloat(eth_v3ArrayQuote[7] - 8*spacing).toFixed(5)),Number(parseFloat(eth_v3ArrayQuote[8] - 9*spacing).toFixed(5))];
+    setEth_v2ArrayQuote(ethArray_price)
 
     //  Take V2 FDAI  Amount out and Enter it as the amount in To Uni V3 
-    for (let q=1; q<10; q++){
+    /*for (let q=1; q<10; q++){
       const amountInFDAI = ethArray1[q-1]
       //console.log("amountInFDAI: ", amountInFDAI)
       const quotedAmountOutETH = await quoterContract.callStatic.quoteExactInputSingle(
-        immutables.token0,
-        immutables.token1,
+        immutables.token0,  // FDAI
+        immutables.token1, // FETH
         immutables.fee,
         amountInFDAI.toString(),
         0
@@ -180,76 +193,74 @@ export default function Home({userSigner, address, localProvider, writeContracts
       ethArray2.push(utils.formatEther(out))
 
     }
-    setEth_v3Array1(ethArray2)
-
-    const arr = [Number(parseFloat(ethArray2[0] - 1*spacing).toFixed(5)),Number(parseFloat(ethArray2[1] - 2*spacing).toFixed(5)),Number(parseFloat(ethArray2[2] - 3*spacing).toFixed(5)),Number(parseFloat(ethArray2[3] - 4*spacing).toFixed(5)),Number(parseFloat(ethArray2[4] - 5*spacing).toFixed(5)),Number(parseFloat(ethArray2[5] - 6*spacing).toFixed(5)),Number(parseFloat(ethArray2[6] - 7*spacing).toFixed(5)),Number(parseFloat(ethArray2[7] - 8*spacing).toFixed(5)),Number(parseFloat(ethArray2[8] - 9*spacing).toFixed(5))];
-
+    setEth_v3Array1(ethArray2) */
+ 
+    const arr = [Number(parseFloat(ethArray1_formatted[0] - 1*spacing).toFixed(5)),Number(parseFloat(ethArray1_formatted[1] - 2*spacing).toFixed(5)),Number(parseFloat(ethArray1_formatted[2] - 3*spacing).toFixed(5)),Number(parseFloat(ethArray1_formatted[3] - 4*spacing).toFixed(5)),Number(parseFloat(ethArray1_formatted[4] - 5*spacing).toFixed(5)),Number(parseFloat(ethArray1_formatted[5] - 6*spacing).toFixed(5)),Number(parseFloat(ethArray1_formatted[6] - 7*spacing).toFixed(5)),Number(parseFloat(ethArray1_formatted[7] - 8*spacing).toFixed(5)),Number(parseFloat(ethArray1_formatted[8] - 9*spacing).toFixed(5))];
+    //console.log("arr: ", arr);
     const max = Math.max(...arr);
     //console.log("max: ", max)
     const index = arr.indexOf(max);
     //console.log("index: ", index);
 
-    setAmountToBuy((ethArray1[index]).toString())
+    //setAmountToBuy((ethArray1[index]).toString())
+    //if (index >= 0) { 
+    if (max >= 0) {
+      setAmountToBuy(spacing*(index+1))
+    }
+   
 
   }
 
   const columns = [
     {
-      title: 'Fake ETH (V2)',
-      dataIndex: 'feth',
-      //width: 100,
-    },
-    {
-      title: 'Fake Dai (V2)',
+      title: 'Borrow F-DAI (V2)',
       dataIndex: 'fdai',
       //width: 100,
     },
     {
-      title: 'Exchange Rate (V2)',
-      dataIndex: 'v2rate',
+      title: 'Convert F-DAI to F-ETH (V3)',
+      dataIndex: 'feth',
       //width: 100,
     },
     {
-      title: 'Fake ETH (V3)',
-      dataIndex: 'fethV3',
-      //width: 100,
-    },
-    {
-      title: 'Fake Dai (V3)',
-      dataIndex: 'fdaiV3',
-      //width: 100,
-    },
-    {
-      title: 'Exchange Rate (V3)',
+      title: '1 F-DAI (V3)',
       dataIndex: 'v3rate',
       //width: 100,
     },
     {
-      title: 'Profit',
-      dataIndex: 'feth_profit',
-      //width: 100
-    },
-    /*
-    {
-      title: 'Fake ETH OUT (V3)',
-      dataIndex: 'feth2',
+      title: '1 F-DAI (V2)',
+      dataIndex: 'v2rate',
       //width: 100,
-    }, */
+    },
+    {
+      title: 'Convert F-ETH to F-DAI (V2)',
+      dataIndex: 'fdaiV2',
+      //width: 100,
+    },
+    {
+      title: 'Profit',
+      dataIndex: 'fdai_profit',
+      //width: 100,
+    }, 
+
+ 
   ];
   const data = [];
   
   for (let i = 1; i < 10; i++) {
     data.push({
       key: i,
-      feth: `${i*spacing}`,
-      fdai: ` ${Number.parseFloat(eth_v2ArrayX[i-1]).toFixed(4)}`,
-      v2rate: ` ${Number.parseFloat(eth_v2ArrayX[i-1]/(spacing*i)).toFixed(4)}`,
-      fethV3: `${i*spacing}`,
-      fdaiV3: ` ${Number.parseFloat(eth_v3ArrayQuote[i-1]).toFixed(4)}`,
+      fdai: `${i*spacing}`,
+      feth: ` ${Number.parseFloat(eth_v3ArrayQuote[i-1]).toFixed(4)}`,
       v3rate: ` ${Number.parseFloat(eth_v3ArrayQuote[i-1]/(spacing*i)).toFixed(4)}`,
-      feth_profit: ` ${Number.parseFloat((eth_v3Array1[i-1] - i*spacing)).toFixed(5)}`,
+      fdaiV2: ` ${Number.parseFloat(eth_v2ArrayX[i-1]).toFixed(4)}`,
+
+      fdai_profit: ` ${Number.parseFloat((eth_v2ArrayX[i-1] - i*spacing)).toFixed(5)}`,
+      v2rate: ` ${Number.parseFloat(eth_v2ArrayQuote[i-1]/(spacing*i)).toFixed(4)}`,
       
-      //feth2: ` ${Number.parseFloat(eth_v3Array1[i-1]).toFixed(3)}`,
+     
+      //v2rate: ` ${Number.parseFloat(eth_v2ArrayX[i-1]/(spacing*i)).toFixed(4)}`,
+    
     });
   }
   
@@ -258,11 +269,13 @@ export default function Home({userSigner, address, localProvider, writeContracts
     return <Table columns={columns} dataSource={data} size="middle" style={{ height: '500px', width: '1200px', align: 'center', position: "topCenter" }} />;
   };
 
+  //  Optimal Amount to Borrow: {parseFloat(amountToBuy).toFixed(2)}  F-DAI <br></br><br></br>
+
   return (
     <div>
       <Divider></Divider>
       <div style={{ fontSize: 20 }}>
-      Optimal Amount to Borrow: {parseFloat(utils.formatEther(amountToBuy)).toFixed(2)}  Fake DAI <br></br><br></br>
+      Optimal Amount to Borrow: {amountToBuy}  F-DAI <br></br><br></br>
       </div>
       <Button
             style={{ fontSize: 16}}
@@ -274,7 +287,7 @@ export default function Home({userSigner, address, localProvider, writeContracts
         </Button><br></br><br></br>
 
         <div style={{ fontSize: 18 }}>
-        Realized Profit: {realizedProfit}  Fake ETH
+        Realized Profit: {realizedProfit}  F-ETH
         </div>
       <Divider></Divider>
 
